@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
 View,
 Text,
@@ -11,17 +11,19 @@ Modal,
 Alert
 } from 'react-native';
 
+import { db } from './firebase';
+
+import {
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+doc
+} from 'firebase/firestore';
+
 export default function App() {
 
-const [books, setBooks] = useState([
-{
-id: 1,
-title: 'Fourth Wing',
-author: 'Rebecca Yarros',
-progress: '78',
-mood: 'emotionally damaged'
-}
-]);
+const [books, setBooks] = useState([]);
 
 const [showModal, setShowModal] = useState(false);
 
@@ -30,28 +32,38 @@ const [author, setAuthor] = useState('');
 const [progress, setProgress] = useState('');
 const [mood, setMood] = useState('');
 
-const quotes = [
-'You were the one thing in this world I wanted.',
-'Some stories stay with you forever.',
-'Perhaps we were friends first and lovers second.'
-];
+const booksCollection = collection(db, 'books');
 
-const addBook = () => {
+useEffect(() => {
+fetchBooks();
+}, []);
+
+const fetchBooks = async () => {
+
+const data = await getDocs(booksCollection);
+
+setBooks(
+data.docs.map((doc) => ({
+...doc.data(),
+id: doc.id
+}))
+);
+
+};
+
+const addBook = async () => {
 
 if (!title || !author) {
-Alert.alert('Please fill title and author');
+Alert.alert('Please enter title and author');
 return;
 }
 
-const newBook = {
-id: Date.now(),
+await addDoc(booksCollection, {
 title,
 author,
 progress,
 mood
-};
-
-setBooks([...books, newBook]);
+});
 
 setTitle('');
 setAuthor('');
@@ -59,13 +71,16 @@ setProgress('');
 setMood('');
 
 setShowModal(false);
+
+fetchBooks();
 };
 
-const deleteBook = (id) => {
-setBooks(books.filter(book => book.id !== id));
-};
+const removeBook = async (id) => {
 
-const totalBooks = books.length;
+await deleteDoc(doc(db, 'books', id));
+
+fetchBooks();
+};
 
 return ( <SafeAreaView style={styles.container}>
 
@@ -80,10 +95,9 @@ busy dealing with non fictional feelings for fictional characters
 </View>
 
 <View style={styles.heroCard}>
-<Text style={styles.heroTitle}>currently reading</Text>
 
-<Text style={styles.currentText}>
-tracking fictional heartbreaks since forever ✨
+<Text style={styles.heroTitle}>
+your cozy reading sanctuary ✨
 </Text>
 
 <TouchableOpacity
@@ -92,16 +106,28 @@ onPress={() => setShowModal(true)}
 
 >
 
-<Text style={styles.addButtonText}>+ add new book</Text> </TouchableOpacity> </View>
+<Text style={styles.addButtonText}>
++ add book
+</Text>
+</TouchableOpacity>
+
+</View>
 
 <View style={styles.section}>
-<Text style={styles.sectionTitle}>📚 your bookshelf</Text>
 
-{books.map((book) => ( <View key={book.id} style={styles.bookCard}>
+<Text style={styles.sectionTitle}>
+📚 your bookshelf
+</Text>
+
+{books.map((book) => (
+
+<View key={book.id} style={styles.bookCard}>
 
 <View style={{ flex: 1 }}>
 
-<Text style={styles.bookTitle}>{book.title}</Text>
+<Text style={styles.bookTitle}>
+{book.title}
+</Text>
 
 <Text style={styles.bookAuthor}>
 {book.author}
@@ -111,7 +137,9 @@ onPress={() => setShowModal(true)}
 <View
 style={[
 styles.progressFill,
-{ width: `${book.progress || 0}%` }
+{
+width: `${book.progress || 0}%`
+}
 ]}
 />
 </View>
@@ -129,52 +157,23 @@ styles.progressFill,
 </View>
 
 <TouchableOpacity
-onPress={() => deleteBook(book.id)}
+onPress={() => removeBook(book.id)}
 
 >
 
-<Text style={styles.deleteText}>✕</Text> </TouchableOpacity>
+<Text style={styles.deleteText}>
+✕
+</Text>
+</TouchableOpacity>
 
 </View>
+
 ))}
+
 </View>
 
 <View style={styles.section}>
-<Text style={styles.sectionTitle}>
-💭 books that felt like...
-</Text>
 
-<View style={styles.feelingsContainer}>
-
-<View style={styles.feelingCard}>
-<Text style={styles.feelingText}>rain at 2am</Text>
-</View>
-
-<View style={styles.feelingCard}>
-<Text style={styles.feelingText}>first love</Text>
-</View>
-
-<View style={styles.feelingCard}>
-<Text style={styles.feelingText}>grief</Text>
-</View>
-
-<View style={styles.feelingCard}>
-<Text style={styles.feelingText}>coming home</Text>
-</View>
-
-</View>
-</View>
-
-<View style={styles.section}>
-<Text style={styles.sectionTitle}>
-✍ favorite quotes
-</Text>
-
-{quotes.map((quote, index) => ( <View key={index} style={styles.quoteCard}> <Text style={styles.quoteText}>
-“{quote}” </Text> </View>
-))} </View>
-
-<View style={styles.section}>
 <Text style={styles.sectionTitle}>
 📊 reading stats
 </Text>
@@ -183,7 +182,7 @@ onPress={() => deleteBook(book.id)}
 
 <View style={styles.statCard}>
 <Text style={styles.statNumber}>
-{totalBooks}
+{books.length}
 </Text>
 
 <Text style={styles.statLabel}>
@@ -193,55 +192,26 @@ books tracked
 
 <View style={styles.statCard}>
 <Text style={styles.statNumber}>
-12k
+∞
 </Text>
 
 <Text style={styles.statLabel}>
-pages survived
+fictional breakdowns
 </Text>
 </View>
 
 <View style={styles.statCard}>
 <Text style={styles.statNumber}>
-87%
+24/7
 </Text>
 
 <Text style={styles.statLabel}>
-emotional damage
+yearning
 </Text>
 </View>
 
 </View>
-</View>
 
-<View style={styles.section}>
-<Text style={styles.sectionTitle}>
-🌧 atmosphere modes
-</Text>
-
-<View style={styles.modeContainer}>
-
-<View style={styles.modeCard}>
-<Text style={styles.modeEmoji}>☕</Text>
-<Text style={styles.modeText}>rainy café</Text>
-</View>
-
-<View style={styles.modeCard}>
-<Text style={styles.modeEmoji}>🕯</Text>
-<Text style={styles.modeText}>candlelight</Text>
-</View>
-
-<View style={styles.modeCard}>
-<Text style={styles.modeEmoji}>📖</Text>
-<Text style={styles.modeText}>dark academia</Text>
-</View>
-
-<View style={styles.modeCard}>
-<Text style={styles.modeEmoji}>❄</Text>
-<Text style={styles.modeText}>snowy cabin</Text>
-</View>
-
-</View>
 </View>
 
 <View style={styles.footer}>
@@ -257,7 +227,7 @@ made for readers who feel too much 💌
 <View style={styles.modalContainer}>
 
 <Text style={styles.modalTitle}>
-add a new fictional obsession 📚
+new fictional obsession 📚
 </Text>
 
 <TextInput
@@ -355,18 +325,13 @@ borderRadius: 30
 heroTitle: {
 fontSize: 20,
 fontWeight: 'bold',
-color: '#7B4F58'
-},
-
-currentText: {
-marginTop: 10,
-color: '#9B6B75'
+color: '#7B4F58',
+marginBottom: 20
 },
 
 addButton: {
-marginTop: 20,
 backgroundColor: '#D98A9A',
-padding: 14,
+padding: 15,
 borderRadius: 20,
 alignItems: 'center'
 },
@@ -444,38 +409,6 @@ color: '#A45C68',
 paddingLeft: 15
 },
 
-feelingsContainer: {
-flexDirection: 'row',
-flexWrap: 'wrap'
-},
-
-feelingCard: {
-backgroundColor: '#FFF0E8',
-padding: 14,
-borderRadius: 20,
-marginRight: 10,
-marginBottom: 10
-},
-
-feelingText: {
-color: '#8B5E5E'
-},
-
-quoteCard: {
-backgroundColor: '#FFF9FB',
-padding: 20,
-borderRadius: 24,
-marginBottom: 14,
-borderLeftWidth: 5,
-borderLeftColor: '#E8A5B5'
-},
-
-quoteText: {
-fontStyle: 'italic',
-lineHeight: 24,
-color: '#6B4A52'
-},
-
 statsContainer: {
 flexDirection: 'row',
 justifyContent: 'space-between'
@@ -500,31 +433,6 @@ marginTop: 8,
 textAlign: 'center',
 fontSize: 12,
 color: '#8D5B65'
-},
-
-modeContainer: {
-flexDirection: 'row',
-flexWrap: 'wrap',
-justifyContent: 'space-between'
-},
-
-modeCard: {
-backgroundColor: '#FFF4F6',
-width: '48%',
-padding: 20,
-borderRadius: 24,
-marginBottom: 14,
-alignItems: 'center'
-},
-
-modeEmoji: {
-fontSize: 28
-},
-
-modeText: {
-marginTop: 10,
-color: '#7B4F58',
-fontWeight: '600'
 },
 
 footer: {
