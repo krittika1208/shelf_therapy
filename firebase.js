@@ -3,12 +3,12 @@ import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
 
-apiKey: "PASTE_HERE",
-authDomain: "PASTE_HERE",
-projectId: "PASTE_HERE",
-storageBucket: "PASTE_HERE",
-messagingSenderId: "PASTE_HERE",
-appId: "PASTE_HERE"
+apiKey: "AIzaSyCVPygetkrxq1lTo4Ysfmd4MSma1QslE4A",
+authDomain: "shelf-therapy.firebaseapp.com",
+projectId: "shelf-therapy",
+storageBucket: "shelf-therapy.firebasestorage.app",
+messagingSenderId: "841938137086",
+appId: "1:841938137086:web:1c5d8dceee7e4ecd69daaf"
 
 };
 
